@@ -1,150 +1,162 @@
 {
     "Qwen3VLImageCaption": {
-        "title": "Qwen3-VL图像描述生成器",
-        "description": "使用Qwen3-VL模型生成高质量图像描述，支持自定义提示词引导",
+        "title": "Qwen3-VL图像描述",
+        "description": "Qwen3-VL图像描述节点 - 专门用于生成图像描述",
         "inputs": {
-            "图像": "输入图像",
-            "模型名称": "选择模型",
-            "反推提示词": "反推提示词",
-            "系统提示词": "系统提示词",
-            "最大令牌数": "最大令牌数",
-            "温度": "温度",
-            "设备": "设备选择",
-            "注意力类型": "注意力类型：标准注意力：兼容性好 | Flash注意力2：性能优先",
-            "随机种子": "随机种子（-1为随机）",
-            "量化模式": "量化模式：无 | 4位量化 | 8位量化",
-            "清除缓存": "清除缓存"
+            "image": "图像",
+            "caption_prompt": "描述提示词",
+            "preset_selection": "预设选择",
+            "system_prompt": "系统提示词",
+            "max_tokens": "最大令牌数",
+            "temperature": "温度参数",
+            "seed": "随机种子",
+            "model_name": "模型名称",
+            "device": "设备",
+            "quantization": "量化模式",
+            "attention_type": "注意力类型",
+            "clear_cache": "清除缓存"
         },
         "widgets": {
-            "图像": "需要生成描述的输入图像",
-            "模型名称": "选择Qwen3-VL-2B-Instruct（快速）或Qwen3-VL-4B-Instruct（高质量）",
-            "反推提示词": "指定图像描述的具体要求和角度",
-            "系统提示词": "设置系统级提示词，引导生成风格",
-            "最大令牌数": "控制生成描述的最大长度",
-            "温度": "控制生成的随机性（0.1-1.0）",
-            "设备": "选择运行设备（自动/CUDA/CPU）",
-            "注意力类型": "选择注意力机制：标准（兼容性好）或FlashAttention2（性能优先）",
-            "随机种子": "设置随机种子，-1表示随机生成",
-            "量化模式": "选择量化模式：无量化（最高质量）、4位量化（平衡）、8位量化（节省内存）",
-            "清除缓存": "是否清除模型缓存以释放内存"
+            "model_name": "模型名称",
+            "device": "设备",
+            "preset_selection": "预设选择",
+            "quantization": "量化模式",
+            "attention_type": "注意力类型",
+            "clear_cache": "清除缓存",
+            "caption_prompt": "描述提示词",
+            "system_prompt": "系统提示词",
+            "max_tokens": "最大令牌数",
+            "temperature": "温度参数",
+            "seed": "随机种子"
         },
         "outputs": {
-            "图像描述": "生成的图像描述文本",
-            "详细响应": "包含生成详细信息的完整响应"
+            "STRING": ["图像描述", "详细响应"]
         }
     },
     "Qwen3VLQA": {
-        "title": "Qwen3-VL 视觉问答",
-        "description": "基于图像进行智能问答对话，支持多轮对话历史记录",
+        "title": "Qwen3-VL视觉问答",
+        "description": "Qwen3-VL视觉问答节点 - 支持基于图像的问答对话",
         "inputs": {
-            "图像": "输入图像",
-            "问题": "输入问题",
-            "模型名称": "选择模型",
-            "系统提示词": "系统提示词",
-            "最大令牌数": "最大令牌数",
-            "温度": "温度",
-            "设备": "设备选择",
-            "注意力类型": "注意力类型：标准注意力：兼容性好 | Flash注意力2：性能优先",
-            "随机种子": "随机种子（-1为随机）",
-            "量化模式": "量化模式：无 | 4位量化 | 8位量化",
-            "历史对话": "历史对话记录"
-        },
-        "outputs": {
-            "回答": "模型生成的回答",
-            "更新历史": "更新后的对话历史"
+            "image": "图像",
+            "question": "问题",
+            "chat_history": "对话历史",
+            "max_tokens": "最大令牌数",
+            "temperature": "温度参数",
+            "seed": "随机种子",
+            "model_name": "模型名称",
+            "device": "设备",
+            "quantization": "量化模式",
+            "attention_type": "注意力类型",
+            "clear_cache": "清除缓存"
         },
         "widgets": {
-            "图像": "需要问答的输入图像",
-            "问题": "输入关于图像的问题",
-            "模型名称": "选择Qwen3-VL-2B-Instruct（快速）或Qwen3-VL-4B-Instruct（高质量）",
-            "系统提示词": "设置系统级提示词，如\"请用中文详细回答\"",
-            "最大令牌数": "控制生成回答的最大长度",
-            "温度": "控制回答的随机性（0.1-1.0）",
-            "设备": "选择运行设备（自动/CUDA/CPU）",
-            "注意力类型": "选择注意力机制：标准（兼容性好）或FlashAttention2（性能优先）",
-            "随机种子": "设置随机种子，-1表示随机生成",
-            "量化模式": "选择量化模式：无量化（最高质量）、4位量化（平衡）、8位量化（节省内存）",
-            "历史对话": "JSON格式的对话历史记录，支持多轮对话"
+            "model_name": "模型名称",
+            "device": "设备",
+            "quantization": "量化模式",
+            "attention_type": "注意力类型",
+            "clear_cache": "清除缓存",
+            "question": "问题",
+            "chat_history": "对话历史",
+            "max_tokens": "最大令牌数",
+            "temperature": "温度参数",
+            "seed": "随机种子"
+        },
+        "outputs": {
+            "STRING": ["答案", "更新历史"]
         }
     },
     "Qwen3VLTextGenerator": {
         "title": "Qwen3-VL 文本生成器",
-        "description": "基于Qwen模型的智能文本生成和内容创作工具，支持多种风格模板",
+        "description": "Qwen3-VL文本生成节点 - 多模态文本生成和内容创作工具",
         "inputs": {
-            "输入文本": "输入文本或创作提示",
-            "生成模式": "选择生成内容的类型",
-            "模型名称": "选择文本生成模型",
-            "风格模板": "选择文本风格",
-            "最大长度": "最大生成长度",
-            "温度": "控制生成随机性",
-            "重复惩罚": "避免重复内容的惩罚系数",
-            "设备": "设备选择",
-            "注意力类型": "注意力类型：标准注意力：兼容性好 | Flash注意力2：性能优先",
-            "随机种子": "随机种子（-1为随机）",
-            "量化模式": "量化模式：无 | 4位量化 | 8位量化",
-            "上下文信息": "背景上下文信息",
-            "关键词": "必须包含的关键词",
-            "输出格式": "输出格式要求"
-        },
-        "outputs": {
-            "生成文本": "生成的文本内容",
-            "使用统计": "令牌使用统计",
-            "生成信息": "生成过程信息"
+            "prompt": "提示词",
+            "system_prompt": "系统提示词",
+            "max_tokens": "最大令牌数",
+            "temperature": "温度参数",
+            "top_p": "Top P",
+            "repetition_penalty": "重复惩罚",
+            "model_name": "模型名称",
+            "device": "设备",
+            "quantization": "量化模式",
+            "attention_type": "注意力类型",
+            "seed": "随机种子",
+            "clear_cache": "清除缓存"
         },
         "widgets": {
-            "输入文本": "输入要生成内容的提示或要求",
-            "生成模式": "选择生成内容类型：创意写作、技术文档、营销文案等",
-            "模型名称": "选择Qwen3-VL-2B-Instruct（快速）或Qwen3-VL-4B-Instruct（高质量）",
-            "风格模板": "选择文本风格：正式/随意、技术/通俗、创意/实用",
-            "最大长度": "控制生成文本的最大长度",
-            "温度": "控制生成的随机性和创造性（0.1-1.0）",
-            "重复惩罚": "避免内容重复的惩罚强度（1.0-2.0）",
-            "设备": "选择运行设备（自动/CUDA/CPU）",
-            "注意力类型": "选择注意力机制：标准（兼容性好）或FlashAttention2（性能优先）",
-            "随机种子": "设置随机种子，-1表示随机生成",
-            "量化模式": "选择量化模式：无量化（最高质量）、4位量化（平衡）、8位量化（节省内存）",
-            "上下文信息": "提供背景信息以生成更相关内容",
-            "关键词": "指定必须包含在输出中的关键词",
-            "输出格式": "指定输出的格式要求：段落、列表、对话等"
+            "model_name": "模型名称",
+            "device": "设备",
+            "quantization": "量化模式",
+            "attention_type": "注意力类型",
+            "clear_cache": "清除缓存",
+            "prompt": "提示词",
+            "system_prompt": "系统提示词",
+            "max_tokens": "最大令牌数",
+            "temperature": "温度参数",
+            "top_p": "Top P",
+            "repetition_penalty": "重复惩罚",
+            "seed": "随机种子"
+        },
+        "outputs": {
+            "STRING": ["生成文本", "详细响应", "使用统计", "调试信息"]
         }
     },
     "Qwen3VLVideoCaption": {
-        "title": "Qwen3-VL 视频反推器",
-        "description": "基于Qwen3-VL模型实现视频内容的智能描述和多维度分析",
+        "title": "Qwen3-VL 视频反推",
+        "description": "Qwen3-VL视频描述节点 - 视频关键帧提取和智能描述生成",
         "inputs": {
-            "video_frames": "输入视频帧序列",
-            "model_name": "选择Qwen3-VL模型版本",
-            "caption_mode": "选择视频描述模式",
+            "video_frames": "视频帧",
+            "caption_mode": "描述模式",
             "max_tokens": "最大令牌数",
             "temperature": "温度参数",
-            "device": "设备选择",
-            "attention_type": "注意力类型：标准注意力：兼容性好 | Flash注意力2：性能优先",
-            "seed": "随机种子（-1为随机）",
-            "quantization": "量化模式：无 | 4位量化 | 8位量化",
-            "custom_prompt": "自定义提示词（仅在自定义模式下使用）",
+            "seed": "随机种子",
+            "model_name": "模型名称",
+            "device": "设备",
+            "quantization": "量化模式",
+            "attention_type": "注意力类型",
+            "custom_prompt": "自定义提示词",
             "frame_sampling": "帧采样策略",
             "sample_rate": "采样帧数",
-            "output_format": "输出格式"
-        },
-        "outputs": {
-            "视频描述": "生成的视频描述文本",
-            "详细响应": "完整的模型响应内容",
-            "处理信息": "包含处理过程详细信息的字典"
+            "output_format": "输出格式",
+            "keep_model_loaded": "保持模型加载"
         },
         "widgets": {
-            "video_frames": "输入需要分析的视频帧序列",
-            "model_name": "选择Qwen3-VL-2B-Instruct（快速）或Qwen3-VL-4B-Instruct（高质量）",
-            "caption_mode": "选择描述模式：详细描述、动作分析、场景分析、情感分析等",
-            "max_tokens": "控制生成描述的最大长度",
-            "temperature": "控制生成的随机性和创造性（0.1-1.0）",
-            "device": "选择运行设备（自动/CUDA/CPU）",
-            "attention_type": "选择注意力机制：标准（兼容性好）或FlashAttention2（性能优先）",
-            "seed": "设置随机种子，-1表示随机生成",
-            "quantization": "选择量化模式：无量化（最高质量）、4位量化（平衡）、8位量化（节省内存）",
-            "custom_prompt": "在自定义模式下输入特定的描述要求",
-            "frame_sampling": "选择帧采样策略：均匀采样、关键帧提取等",
-            "sample_rate": "设置采样的帧数量",
-            "output_format": "选择输出格式：段落、列表、时间轴等"
+            "model_name": "模型名称",
+            "device": "设备",
+            "quantization": "量化模式",
+            "attention_type": "注意力类型",
+            "caption_mode": "描述模式",
+            "frame_sampling": "帧采样策略",
+            "output_format": "输出格式",
+            "keep_model_loaded": "保持模型加载",
+            "video_frames": "视频帧",
+            "max_tokens": "最大令牌数",
+            "temperature": "温度参数",
+            "seed": "随机种子",
+            "custom_prompt": "自定义提示词",
+            "sample_rate": "采样帧数"
+        },
+        "outputs": {
+            "STRING": ["格式化输出", "详细响应"],
+            "DICT": ["处理信息"],
+            "INT": ["种子"]
+        }
+    },
+    "LoadVideoForQwen3VL": {
+        "title": "加载视频 (Qwen3-VL)",
+        "description": "加载视频文件并提取帧序列用于Qwen3-VL处理",
+        "inputs": {
+            "video": "视频文件",
+            "frame_rate": "帧率",
+            "max_frames": "最大帧数"
+        },
+        "widgets": {
+            "video": "视频文件",
+            "frame_rate": "帧率",
+            "max_frames": "最大帧数"
+        },
+        "outputs": {
+            "IMAGE": ["帧序列"],
+            "INT": ["帧数量"]
         }
     }
 }
