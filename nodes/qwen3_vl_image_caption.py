@@ -13,6 +13,8 @@ import gc
 class Qwen3VLImageCaption:
     """Qwen3-VL图像描述节点 - 专门用于生成图像描述"""
     
+
+    
     # 提示预设字典
     CAPTION_PRESETS = {
         "提示风格 - 标签": "你的任务是根据图像中的视觉信息，为文本到图像AI生成一个简洁的逗号分隔标签列表。将输出限制在最多50个独特标签。严格描述视觉元素，如主体、服装、环境、颜色、光线和构图。不要包含抽象概念、解释、营销术语或技术术语（例如，不要包含'SEO'、'品牌对齐'、'病毒式传播潜力'）。目标是简洁的视觉描述符列表。避免重复标签。",
@@ -59,6 +61,13 @@ class Qwen3VLImageCaption:
                     "max": 2.0,
                     "step": 0.1
                 }),
+                "repetition_penalty": ("FLOAT", {
+                    "default": 1.2,
+                    "min": 0.8,
+                    "max": 2.0,
+                    "step": 0.05,
+                    "description": "重复惩罚，用于减少生成内容的重复性"
+                }),
 
             },
             "optional": {
@@ -83,6 +92,11 @@ class Qwen3VLImageCaption:
                 "clear_cache": ("BOOLEAN", {
                     "default": False
                 }),
+                "max_memory": (["无限制", "8GB", "10GB", "12GB", "16GB", "20GB", "24GB"], {
+                    "default": "无限制",
+                    "description": "限制模型在不同设备上的最大内存使用"
+                }),
+
             }
         }
     
@@ -203,7 +217,26 @@ class Qwen3VLImageCaption:
             print(f"{'='*70}\n")
             raise
     
-    def load_model(self, model_name, device, quantization="无（FP16）", attention_type="Eager: 最佳兼容性"):
+    def _parse_max_memory_option(self, max_memory_option: str):
+        """解析内存配置选项"""
+        if max_memory_option == "无限制":
+            return None
+        elif max_memory_option == "8GB":
+            return {"cpu": "8GiB"}
+        elif max_memory_option == "10GB":
+            return {"cpu": "10GiB"}
+        elif max_memory_option == "12GB":
+            return {"cpu": "12GiB"}
+        elif max_memory_option == "16GB":
+            return {"cpu": "16GiB"}
+        elif max_memory_option == "20GB":
+            return {"cpu": "20GiB"}
+        elif max_memory_option == "24GB":
+            return {"cpu": "24GiB"}
+        else:
+            return None
+
+    def load_model(self, model_name, device, quantization="无（FP16）", attention_type="Eager: 最佳兼容性", max_memory="无限制"):
         """加载模型"""
         # 提取干净的模型名称（去除"（已下载）"标记）
         clean_model_name = model_name.replace("（已下载）", "")
@@ -247,6 +280,11 @@ class Qwen3VLImageCaption:
                 "low_cpu_mem_usage": True,
                 "trust_remote_code": True
             }
+            
+            # 解析并设置最大内存限制
+            max_memory_config = self._parse_max_memory_option(max_memory)
+            if max_memory_config:
+                model_kwargs["max_memory"] = max_memory_config
             
             # 配置量化
             quantization_config = None
@@ -321,7 +359,15 @@ class Qwen3VLImageCaption:
         
         return Image.fromarray(array)
     
-    def generate_caption(self, image, caption_prompt, preset_selection, system_prompt, max_tokens, temperature, seed=-1, model_name="Qwen3-VL-2B-Instruct", device="Auto", quantization="无（FP16）", attention_type="Eager: 最佳兼容性", clear_cache=False):
+    def build_prompt(self, caption_prompt):
+        """构建优化的提示词"""
+        # 如果所有部分都为空，提供默认提示
+        if not caption_prompt:
+            return "请详细描述这张图片，包括主要对象、场景、颜色、风格和其他特征。"
+        
+        return caption_prompt
+    
+    def generate_caption(self, image, caption_prompt, preset_selection, system_prompt, max_tokens, temperature, repetition_penalty=1.2, seed=-1, model_name="Qwen3-VL-2B-Instruct", device="Auto", quantization="无（FP16）", attention_type="Eager: 最佳兼容性", clear_cache=False, max_memory="无限制"):
         """生成图像描述"""
         
         # 提取干净的模型名称（去除"（已下载）"标记）
@@ -330,6 +376,9 @@ class Qwen3VLImageCaption:
         # 如果 caption_prompt 为空且选择了预设，则使用预设提示
         if not caption_prompt.strip() and preset_selection != "无预设" and preset_selection in self.CAPTION_PRESETS:
             caption_prompt = self.CAPTION_PRESETS[preset_selection]
+        
+        # 构建优化的最终提示词
+        final_prompt = self.build_prompt(caption_prompt)
         
         print(f"[Qwen3-VL] 调试信息 - 输入参数:")
         print(f"  - 清理缓存: {clear_cache}")
@@ -344,7 +393,7 @@ class Qwen3VLImageCaption:
             print(f"[Qwen3-VL] 使用独立加载模式: {clean_model_name}")
             try:
                 device_actual = self.get_device(device)
-                self.load_model(clean_model_name, device_actual, quantization, attention_type)
+                self.load_model(clean_model_name, device_actual, quantization, attention_type, max_memory)
                 current_model = self.model
                 current_processor = self.processor
                 print(f"[Qwen3-VL Image Caption] 模型加载成功")
@@ -361,7 +410,7 @@ class Qwen3VLImageCaption:
                     "role": "user",
                     "content": [
                         {"type": "image", "image": pil_image},
-                        {"type": "text", "text": caption_prompt}
+                        {"type": "text", "text": final_prompt}
                     ]
                 }
             ]
@@ -400,6 +449,7 @@ class Qwen3VLImageCaption:
                     **inputs,
                     max_new_tokens=max_tokens,
                     temperature=temperature,
+                    repetition_penalty=repetition_penalty,
                     do_sample=True,
                     top_p=0.9,
                     pad_token_id=current_processor.tokenizer.pad_token_id,

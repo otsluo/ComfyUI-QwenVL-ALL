@@ -1,0 +1,34 @@
+{
+  "CAPTION_TYPE_MAP": {
+    "": [
+      "不指定特定类型，让模型自由发挥。"
+    ],
+    "Descriptive": [
+      "详细描述图像内容，包括主要对象、场景、动作和上下文。"
+    ],
+    "Descriptive (Informal)": [
+      "以更随意的语言描述图像内容，包括主要对象、场景、动作和上下文。"
+    ],
+    "Training Prompt": [
+      "生成可用于训练图像生成模型的高质量提示词。"
+    ],
+    "MidJourney": [
+      "生成适用于 MidJourney 的艺术风格提示词。"
+    ],
+    "Booru tag list": [
+      "生成用于 Danbooru 等标签系统的标签列表。"
+    ],
+    "Booru-like tag list": [
+      "生成类似 Booru 风格但更宽松的标签列表。"
+    ],
+    "Art Critic": [
+      "像艺术评论家一样分析图像，讨论构图、色彩、技法等方面。"
+    ]
+  },
+  "CAPTION_LENGTH": [
+    "any", "very short", "short", "medium-length", "long", "very long",
+    "20 words", "30 words", "40 words", "50 words", "60 words", "70 words", 
+    "80 words", "90 words", "100 words", "110 words", "120 words", "130 words", 
+    "140 words", "150 words", "160 words", "170 words", "180 words", "190 words", "200 words"
+  ]
+}

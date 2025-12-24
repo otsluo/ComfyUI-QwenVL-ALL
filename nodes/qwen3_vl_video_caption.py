@@ -8,7 +8,7 @@ import torch
 import json
 import numpy as np
 from PIL import Image
-from typing import Dict, List, Tuple, Any, Optional
+from typing import Dict, List, Tuple, Any, Optional, Union
 import folder_paths
 import comfy.model_management as model_management
 import io
@@ -138,7 +138,15 @@ class Qwen3VLVideoCaption:
                     "max": 2.0,
                     "step": 0.1,
                     "description": "生成温度参数"
-                })
+                }),
+                "repetition_penalty": ("FLOAT", {
+                    "default": 1.2,
+                    "min": 0.1,
+                    "max": 2.0,
+                    "step": 0.1,
+                    "description": "重复惩罚参数，控制重复内容的生成"
+                }),
+
             },
             "optional": {
                 "model_name": (cls.get_available_models(), 
@@ -185,6 +193,10 @@ class Qwen3VLVideoCaption:
                     "min": -1,
                     "max": 0xffffffffffffffff,
                     "description": "随机种子，-1表示随机"
+                }),
+                "max_memory": (["无限制", "8GB", "10GB", "12GB", "16GB", "20GB", "24GB"], {
+                    "default": "无限制",
+                    "description": "限制模型在不同设备上的最大内存使用"
                 })
             }
         }
@@ -259,7 +271,66 @@ class Qwen3VLVideoCaption:
         
         return "sdpa"  # Default return SDPA
     
-    def _load_model(self, model_name: str, device: str, quantization: str, attn_implementation: str):
+    def _parse_max_memory_option(self, option):
+        """
+        解析max_memory选项为具体的内存配置字典
+        
+        Args:
+            option (str): 选项名称
+            
+        Returns:
+            dict or None: 内存配置字典或None
+        """
+        # 定义预设的内存配置
+        memory_configs = {
+            "无限制": {},
+            "8GB": {"cuda:0": "8GiB", "cpu": "16GiB"},
+            "10GB": {"cuda:0": "10GiB", "cpu": "20GiB"},
+            "12GB": {"cuda:0": "12GiB", "cpu": "24GiB"},
+            "16GB": {"cuda:0": "16GiB", "cpu": "32GiB"},
+            "20GB": {"cuda:0": "20GiB", "cpu": "40GiB"},
+            "24GB": {"cuda:0": "24GiB", "cpu": "64GiB"}
+        }
+        
+        # 如果是预设选项，返回对应的配置
+        if option in memory_configs:
+            config = memory_configs[option]
+        else:
+            # 不支持自定义选项，返回无限制配置
+            print(f"[Qwen3-VL 视频描述] 不支持的max_memory选项: {option}，使用无限制配置")
+            return {}
+        
+        # 将字符串格式的内存大小转换为整数（字节）
+        import re
+        parsed_config = {}
+        for device_id, mem_str in config.items():
+            # 匹配数字和单位
+            match = re.match(r'^(\d+(?:\.\d+)?)([TGMK]iB|B)$', mem_str, re.IGNORECASE)
+            if match:
+                value, unit = match.groups()
+                value = float(value)
+                # 转换为字节
+                if unit.upper() == 'TB':
+                    value *= 1024**4
+                elif unit.upper() == 'GB':
+                    value *= 1024**3
+                elif unit.upper() == 'MB':
+                    value *= 1024**2
+                elif unit.upper() == 'KB':
+                    value *= 1024
+                elif unit.upper() == 'TIB':
+                    value *= 1024**4
+                elif unit.upper() == 'GIB':
+                    value *= 1024**3
+                elif unit.upper() == 'MIB':
+                    value *= 1024**2
+                elif unit.upper() == 'KIB':
+                    value *= 1024
+                parsed_config[device_id] = int(value)
+        
+        return parsed_config
+    
+    def _load_model(self, model_name: str, device: str, quantization: str, attn_implementation: str, max_memory="无限制"):
         """加载Qwen3-VL模型和处理器，支持缓存"""
         # 提取干净的模型名称（去除"（已下载）"标记）
         clean_model_name = model_name.replace("（已下载）", "")
@@ -322,16 +393,26 @@ class Qwen3VLVideoCaption:
                 print("[警告] Qwen3VLForConditionalGeneration不可用，使用AutoModelForVision2Seq")
                 model_class = AutoModelForVision2Seq
             
+            # 加载模型参数
+            model_kwargs = {
+                "torch_dtype": torch.bfloat16 if bf16_support else torch.float16,
+                "device_map": "auto" if device == "auto" else None,
+                "attn_implementation": attn_implementation,
+                "quantization_config": quantization_config,
+                "trust_remote_code": True,
+                "low_cpu_mem_usage": True,
+                "local_files_only": True  # 优先使用本地文件
+            }
+            
+            # 配置max_memory
+            max_memory_config = self._parse_max_memory_option(max_memory)
+            if max_memory_config:
+                model_kwargs["max_memory"] = max_memory_config
+            
             # 加载模型
             model = model_class.from_pretrained(
                 model_checkpoint,
-                torch_dtype=torch.bfloat16 if bf16_support else torch.float16,
-                device_map="auto" if device == "auto" else None,
-                attn_implementation=attn_implementation,
-                quantization_config=quantization_config,
-                trust_remote_code=True,
-                low_cpu_mem_usage=True,
-                local_files_only=True  # 优先使用本地文件
+                **model_kwargs
             )
             
             # 设备特定处理
@@ -358,10 +439,10 @@ class Qwen3VLVideoCaption:
         print(f"[Qwen3-VL 视频描述] 系统编码: {encoding}")
     
     def generate_video_caption(self, video_frames, caption_mode="详细描述", 
-                               max_tokens=512, temperature=0.7, seed=-1, model_name="Qwen3-VL-2B-Instruct", device="auto", 
+                               max_tokens=512, temperature=0.7, repetition_penalty=1.2, seed=-1, model_name="Qwen3-VL-2B-Instruct", device="auto", 
                                attention_type="SDPA注意力", quantization="无（FP16）",
                                custom_prompt=None, frame_sampling="均匀采样", sample_rate=8,
-                               output_format="纯文本", keep_model_loaded=False) -> Tuple[str, str, Dict[str, Any]]:
+                               output_format="纯文本", keep_model_loaded=False, max_memory="无限制") -> Tuple[str, str, Dict[str, Any]]:
         """
         生成视频描述
         
@@ -403,7 +484,8 @@ class Qwen3VLVideoCaption:
                 model_name=model_name,
                 device=device_info["device"],
                 quantization=quantization,
-                attn_implementation=attn_implementation
+                attn_implementation=attn_implementation,
+                max_memory=max_memory
             )
             
             # 将视频帧处理为base64编码
@@ -475,6 +557,7 @@ class Qwen3VLVideoCaption:
                     **inputs,
                     max_new_tokens=max_tokens,
                     temperature=temperature,
+                    repetition_penalty=repetition_penalty,
                     do_sample=True,
                     pad_token_id=processor.tokenizer.eos_token_id,
                 )
@@ -556,18 +639,22 @@ class Qwen3VLVideoCaption:
     
     def _build_prompt(self, mode: str, custom_prompt: Optional[str] = None) -> str:
         """构建提示词"""
+        # 根据语言选择默认提示词
         prompts = {
             "详细描述": "请提供此视频内容的详细描述，包括场景、角色、动作、情感、氛围等。",
-        "简洁描述": "请简明扼要地描述此视频的主要内容。",
-        "动作分析": "请分析视频中的动作和行为，描述正在发生的事情。",
-        "场景分析": "请描述视频中的场景、环境和背景。",
-        "情感分析": "请分析视频中表达的情感和氛围。"
+            "简洁描述": "请简明扼要地描述此视频的主要内容。",
+            "动作分析": "请分析视频中的动作和行为，描述正在发生的事情。",
+            "场景分析": "请描述视频中的场景、环境和背景。",
+            "情感分析": "请分析视频中表达的情感和氛围。"
         }
         
+        # 获取基础提示词
         if mode == "自定义" and custom_prompt:
-            return custom_prompt
-            
-        return prompts.get(mode, prompts["详细描述"])
+            base_prompt = custom_prompt
+        else:
+            base_prompt = prompts.get(mode, prompts["详细描述"])
+        
+        return base_prompt
     
     def _process_video_frames(self, frames: torch.Tensor, processor) -> List[Image.Image]:
         """处理视频帧"""

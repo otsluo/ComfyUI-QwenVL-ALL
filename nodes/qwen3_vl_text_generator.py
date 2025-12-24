@@ -156,6 +156,10 @@ class Qwen3VLTextGenerator:
                     "max": 0xffffffffffffffff,
                     "description": "随机种子，-1表示随机"
                 }),
+                "max_memory": (["无限制", "8GB", "10GB", "12GB", "16GB", "20GB", "24GB"], {
+                    "default": "无限制",
+                    "description": "限制模型在不同设备上的最大内存使用"
+                }),
                 "clear_cache": ("BOOLEAN", {
                     "default": False,
                     "description": "是否清除模型缓存"
@@ -184,6 +188,56 @@ class Qwen3VLTextGenerator:
             else:
                 return "cpu"
         return device_name
+    
+    def _parse_max_memory_option(self, max_memory_option):
+        """解析max_memory选项为实际的内存配置"""
+        memory_configs = {
+            "无限制": {},
+            "8GB": {"cuda:0": "8GiB", "cpu": "16GiB"},
+            "10GB": {"cuda:0": "10GiB", "cpu": "20GiB"},
+            "12GB": {"cuda:0": "12GiB", "cpu": "24GiB"},
+            "16GB": {"cuda:0": "16GiB", "cpu": "32GiB"},
+            "20GB": {"cuda:0": "20GiB", "cpu": "40GiB"},
+            "24GB": {"cuda:0": "24GiB", "cpu": "48GiB"}
+        }
+        
+        # 如果是预设选项，直接返回对应的配置
+        if max_memory_option in memory_configs:
+            config = memory_configs[max_memory_option]
+            # 转换字符串格式的内存大小为字节数
+            if config:
+                parsed_config = {}
+                import re
+                for device_id, mem_str in config.items():
+                    # 匹配数字和单位
+                    match = re.match(r'^(\d+(?:\.\d+)?)([TGMK]iB|B)$', mem_str, re.IGNORECASE)
+                    if match:
+                        value, unit = match.groups()
+                        value = float(value)
+                        # 转换为字节
+                        if unit.upper() == 'TB':
+                            value *= 1024**4
+                        elif unit.upper() == 'GB':
+                            value *= 1024**3
+                        elif unit.upper() == 'MB':
+                            value *= 1024**2
+                        elif unit.upper() == 'KB':
+                            value *= 1024
+                        elif unit.upper() == 'TIB':
+                            value *= 1024**4
+                        elif unit.upper() == 'GIB':
+                            value *= 1024**3
+                        elif unit.upper() == 'MIB':
+                            value *= 1024**2
+                        elif unit.upper() == 'KIB':
+                            value *= 1024
+                        parsed_config[device_id] = int(value)
+                return parsed_config
+            return config
+        
+        # 不支持自定义选项，返回无限制配置
+        print(f"[Qwen3-VL 文本生成] 不支持的max_memory选项: {max_memory_option}，使用无限制配置")
+        return {}
     
     def _download_model_with_progress(self, model_id: str, local_dir: str):
         """下载模型并显示进度"""
@@ -216,7 +270,7 @@ class Qwen3VLTextGenerator:
             print(f"{'='*70}\n")
             raise
     
-    def load_model(self, model_name, device, attention_type, quantization):
+    def load_model(self, model_name, device, attention_type, quantization, max_memory="无限制"):
         """加载模型，支持独立下载和缓存机制"""
         # 提取干净的模型名称（去除"（已下载）"标记）
         clean_model_name = model_name.replace("（已下载）", "")
@@ -297,6 +351,11 @@ class Qwen3VLTextGenerator:
                     "trust_remote_code": True
                 }
                 
+                # 配置max_memory
+                max_memory_config = self._parse_max_memory_option(max_memory)
+                if max_memory_config:
+                    load_kwargs["max_memory"] = max_memory_config
+                
                 # 如需要则添加量化配置
                 if quantization in QUANTIZATION_CONFIGS:
                     load_kwargs.update(QUANTIZATION_CONFIGS[quantization])
@@ -326,58 +385,17 @@ class Qwen3VLTextGenerator:
                 print("3. 查看上方详细错误信息")
                 raise RuntimeError(error_msg)
     
-    def build_prompt(self, 输入文本, 生成模式, 风格模板, 上下文信息, 关键词, 输出格式):
+    def build_prompt(self, prompt):
         """构建优化的提示词"""
-        
-        # 模式特定的系统提示词
-        mode_prompts = {
-            "创意写作": "你是一个创意写作助手，擅长生成富有想象力和创造力的文本内容。",
-            "技术文档": "你是一个技术文档专家，能够生成准确、清晰的文档。",
-            "营销文案": "你是一个营销文案专家，擅长创作吸引人、有说服力的营销内容。",
-            "故事创作": "你是一个故事创作大师，能够创作引人入胜的故事情节和人物对话。",
-            "诗歌生成": "你是一个诗人，擅长创作优美、富有意境的诗歌作品。",
-            "代码注释": "你是一个编程专家，能够为代码提供清晰、有用的注释和说明。"
-        }
-        
-        # 风格特定的要求
-        style_requirements = {
-            "正式": "请使用正式、专业的语言风格。",
-            "轻松": "请使用轻松、易懂的语言风格。",
-            "幽默": "请使用幽默、风趣的语言风格。",
-            "专业": "请使用专业、权威的语言风格。",
-            "感性": "请使用感性、富有情感的语言风格。",
-            "理性": "请使用理性、逻辑清晰的语言风格。"
-        }
-        
-        # 构建系统提示词
-        system_prompt = f"""{mode_prompts.get(生成模式, "你是一个智能文本生成助手。")}
-{style_requirements.get(风格模板, "请根据内容需求调整语言风格。")}"""
-        
-        # 添加上下文信息
-        if 上下文信息:
-            system_prompt += f"\n\n背景信息：{上下文信息}"
-        
-        # 添加关键词要求
-        if 关键词:
-            system_prompt += f"\n\n必须包含的关键词：{关键词}"
-        
-        # 添加输出格式要求
-        if 输出格式:
-            system_prompt += f"\n\n输出格式要求：{输出格式}"
-        
-        # 构建完整的对话提示
-        prompt = f"""
-{system_prompt}
-
-用户输入: {输入文本}
-
-请根据以上信息生成相应的内容。"""
+        # 如果所有部分都为空，提供默认提示
+        if not prompt:
+            return "写一个关于勇敢骑士和魔法龙的创意故事。"
         
         return prompt
 
     def generate_text(self, prompt, system_prompt, max_tokens, temperature, top_p, 
                      repetition_penalty, seed, model_name, device, quantization="无（FP16）", 
-                     attention_type="Eager: 最佳兼容性", clear_cache=False):
+                     attention_type="Eager: 最佳兼容性", clear_cache=False, max_memory="无限制"):
         """生成文本 - 支持多种创作模式和参数控制"""
         try:
             # 清理模型缓存（如需要）
@@ -387,13 +405,18 @@ class Qwen3VLTextGenerator:
             
             # 加载模型
             print(f"[Qwen3-VL 文本生成] 🚀 准备加载模型: {model_name}")
-            self.load_model(model_name, device, attention_type, quantization)
+            self.load_model(model_name, device, attention_type, quantization, max_memory)
+            
+            # 使用build_prompt方法处理参数
+            processed_prompt = self.build_prompt(prompt)
             
             # 构建对话消息
             messages = []
-            if system_prompt:
+            
+            # 处理系统提示
+            if system_prompt and system_prompt.strip():
                 messages.append({"role": "system", "content": system_prompt})
-            messages.append({"role": "user", "content": prompt})
+            messages.append({"role": "user", "content": processed_prompt})
             
             # 应用聊天模板
             text = self.tokenizer.apply_chat_template(

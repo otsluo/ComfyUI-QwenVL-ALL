@@ -116,6 +116,13 @@ class Qwen3VLQA:
                     "max": 2.0,
                     "step": 0.1,
                     "description": "生成温度"
+                }),
+                "repetition_penalty": ("FLOAT", {
+                    "default": 1.2,
+                    "min": 0.1,
+                    "max": 2.0,
+                    "step": 0.1,
+                    "description": "重复惩罚参数，控制重复内容的生成"
                 })
             },
             "optional": {
@@ -149,6 +156,10 @@ class Qwen3VLQA:
                     "min": -1,
                     "max": 0xffffffffffffffff,
                     "description": "随机种子，-1表示随机"
+                }),
+                "max_memory": (["无限制", "8GB", "10GB", "12GB", "16GB", "20GB", "24GB"], {
+                    "default": "无限制",
+                    "description": "限制模型在不同设备上的最大内存使用"
                 }),
             }
         }
@@ -201,7 +212,66 @@ class Qwen3VLQA:
             print("3. 手动下载模型到指定路径")
             raise e
     
-    def load_model(self, model_name, device, attention_type, quantization):
+    def _parse_max_memory_option(self, option):
+        """
+        解析max_memory选项为具体的内存配置字典
+        
+        Args:
+            option (str): 选项名称
+            
+        Returns:
+            dict or None: 内存配置字典或None
+        """
+        # 定义预设的内存配置
+        memory_configs = {
+            "无限制": {},
+            "8GB": {"cuda:0": "8GiB", "cpu": "16GiB"},
+            "10GB": {"cuda:0": "10GiB", "cpu": "20GiB"},
+            "12GB": {"cuda:0": "12GiB", "cpu": "24GiB"},
+            "16GB": {"cuda:0": "16GiB", "cpu": "32GiB"},
+            "20GB": {"cuda:0": "20GiB", "cpu": "40GiB"},
+            "24GB": {"cuda:0": "24GiB", "cpu": "64GiB"}
+        }
+        
+        # 如果是预设选项，返回对应的配置
+        if option in memory_configs:
+            config = memory_configs[option]
+        else:
+            # 不支持自定义选项，返回无限制配置
+            print(f"[Qwen3-VL QA] 不支持的max_memory选项: {option}，使用无限制配置")
+            return {}
+        
+        # 将字符串格式的内存大小转换为整数（字节）
+        import re
+        parsed_config = {}
+        for device_id, mem_str in config.items():
+            # 匹配数字和单位
+            match = re.match(r'^(\d+(?:\.\d+)?)([TGMK]iB|B)$', mem_str, re.IGNORECASE)
+            if match:
+                value, unit = match.groups()
+                value = float(value)
+                # 转换为字节
+                if unit.upper() == 'TB':
+                    value *= 1024**4
+                elif unit.upper() == 'GB':
+                    value *= 1024**3
+                elif unit.upper() == 'MB':
+                    value *= 1024**2
+                elif unit.upper() == 'KB':
+                    value *= 1024
+                elif unit.upper() == 'TIB':
+                    value *= 1024**4
+                elif unit.upper() == 'GIB':
+                    value *= 1024**3
+                elif unit.upper() == 'MIB':
+                    value *= 1024**2
+                elif unit.upper() == 'KIB':
+                    value *= 1024
+                parsed_config[device_id] = int(value)
+        
+        return parsed_config
+    
+    def load_model(self, model_name, device, attention_type, quantization, max_memory="无限制"):
         """加载模型，支持独立下载和缓存机制"""
         # 提取干净的模型名称（去除"（已下载）"标记）
         clean_model_name = model_name.replace("（已下载）", "")
@@ -279,7 +349,14 @@ class Qwen3VLQA:
                 "dtype": torch.float16,
                 "device_map": "auto" if device_name == "auto" or quantization != "None" else None,
                 "attn_implementation": attention_impl,
+                "low_cpu_mem_usage": True,
+                "trust_remote_code": True
             }
+            
+            # 配置max_memory
+            max_memory_config = self._parse_max_memory_option(max_memory)
+            if max_memory_config:
+                model_kwargs["max_memory"] = max_memory_config
             
             if quantization_config is not None:
                 model_kwargs["quantization_config"] = quantization_config
@@ -309,11 +386,10 @@ class Qwen3VLQA:
             print("4. 尝试使用量化模式或切换注意力类型")
             raise e
     
-    def generate_answer(self, image, question, chat_history, max_tokens, temperature, 
+    def generate_answer(self, image, question, chat_history, max_tokens, temperature, repetition_penalty=1.2,
                        system_prompt="", seed=-1, clear_model_cache=False, model_name="Qwen3-VL-2B-Instruct", 
-                       device="Auto", quantization="无（FP16）", 
-                       attention_type="SDPA: 平衡"):
-        """根据图像和问题生成答案，支持对话历史"""
+                       device="Auto", quantization="无（FP16）", attention_type="SDPA: 平衡", max_memory="无限制"):
+        """根据图像和问题生成答案，支持对话历史和姓名输入"""
         
         # 清理模型缓存（如果需要）
         if clear_model_cache:
@@ -321,7 +397,7 @@ class Qwen3VLQA:
             self.cleanup_model()
         
         # 加载模型
-        current_model, current_processor = self.load_model(model_name, device, attention_type, quantization)
+        current_model, current_processor = self.load_model(model_name, device, attention_type, quantization, max_memory)
         
         # 处理输入图像
         if isinstance(image, torch.Tensor):
@@ -361,12 +437,15 @@ class Qwen3VLQA:
                 # 如果解析失败，忽略对话历史
                 pass
         
+        # 使用原始问题，不进行额外处理
+        processed_question = question
+        
         # 添加当前问题
         messages.append({
             "role": "user", 
             "content": [
                 {"type": "image", "image": image_base64},
-                {"type": "text", "text": question}
+                {"type": "text", "text": processed_question}
             ]
         })
         
@@ -416,6 +495,7 @@ class Qwen3VLQA:
                 **inputs,
                 max_new_tokens=max_tokens,
                 temperature=temperature,
+                repetition_penalty=repetition_penalty,
                 do_sample=temperature > 0,
                 top_p=0.95,
                 pad_token_id=current_processor.tokenizer.eos_token_id

@@ -1,162 +1,161 @@
 {
-    "Qwen3VLImageCaption": {
-        "title": "Qwen3-VL图像描述",
-        "description": "Qwen3-VL图像描述节点 - 专门用于生成图像描述",
-        "inputs": {
-            "image": "图像",
-            "caption_prompt": "描述提示词",
-            "preset_selection": "预设选择",
-            "system_prompt": "系统提示词",
-            "max_tokens": "最大令牌数",
-            "temperature": "温度参数",
-            "seed": "随机种子",
-            "model_name": "模型名称",
-            "device": "设备",
-            "quantization": "量化模式",
-            "attention_type": "注意力类型",
-            "clear_cache": "清除缓存"
-        },
-        "widgets": {
-            "model_name": "模型名称",
-            "device": "设备",
-            "preset_selection": "预设选择",
-            "quantization": "量化模式",
-            "attention_type": "注意力类型",
-            "clear_cache": "清除缓存",
-            "caption_prompt": "描述提示词",
-            "system_prompt": "系统提示词",
-            "max_tokens": "最大令牌数",
-            "temperature": "温度参数",
-            "seed": "随机种子"
-        },
-        "outputs": {
-            "STRING": ["图像描述", "详细响应"]
-        }
+  "Qwen3VLImageCaption": {
+    "title": "Qwen3-VL 图像反推",
+    "description": "使用Qwen3-VL模型生成图像描述",
+    "inputs": {
+      "image": "输入图像",
+      "caption_prompt": "描述提示词",
+      "preset_selection": "提示预设",
+      "system_prompt": "系统提示词",
+      "max_tokens": "最大令牌数",
+      "temperature": "温度",
+      "repetition_penalty": "重复惩罚",
+      "model_name": "模型名称",
+      "device": "设备",
+      "quantization": "量化",
+      "attention_type": "注意力类型",
+      "seed": "随机种子",
+      "clear_cache": "清除缓存",
+      "max_memory": "最大内存使用"
     },
-    "Qwen3VLQA": {
-        "title": "Qwen3-VL视觉问答",
-        "description": "Qwen3-VL视觉问答节点 - 支持基于图像的问答对话",
-        "inputs": {
-            "image": "图像",
-            "question": "问题",
-            "chat_history": "对话历史",
-            "max_tokens": "最大令牌数",
-            "temperature": "温度参数",
-            "seed": "随机种子",
-            "model_name": "模型名称",
-            "device": "设备",
-            "quantization": "量化模式",
-            "attention_type": "注意力类型",
-            "clear_cache": "清除缓存"
-        },
-        "widgets": {
-            "model_name": "模型名称",
-            "device": "设备",
-            "quantization": "量化模式",
-            "attention_type": "注意力类型",
-            "clear_cache": "清除缓存",
-            "question": "问题",
-            "chat_history": "对话历史",
-            "max_tokens": "最大令牌数",
-            "temperature": "温度参数",
-            "seed": "随机种子"
-        },
-        "outputs": {
-            "STRING": ["答案", "更新历史"]
-        }
+    "widgets": {
+      "caption_prompt": "描述提示词",
+      "preset_selection": "提示预设",
+      "system_prompt": "系统提示词",
+      "max_tokens": "最大令牌数",
+      "temperature": "温度",
+      "repetition_penalty": "重复惩罚",
+      "model_name": "模型名称",
+      "device": "设备",
+      "quantization": "量化",
+      "attention_type": "注意力类型",
+      "seed": "随机种子",
+      "clear_cache": "清除缓存",
+      "max_memory": "最大内存使用"
     },
-    "Qwen3VLTextGenerator": {
-        "title": "Qwen3-VL 文本生成器",
-        "description": "Qwen3-VL文本生成节点 - 多模态文本生成和内容创作工具",
-        "inputs": {
-            "prompt": "提示词",
-            "system_prompt": "系统提示词",
-            "max_tokens": "最大令牌数",
-            "temperature": "温度参数",
-            "top_p": "Top P",
-            "repetition_penalty": "重复惩罚",
-            "model_name": "模型名称",
-            "device": "设备",
-            "quantization": "量化模式",
-            "attention_type": "注意力类型",
-            "seed": "随机种子",
-            "clear_cache": "清除缓存"
-        },
-        "widgets": {
-            "model_name": "模型名称",
-            "device": "设备",
-            "quantization": "量化模式",
-            "attention_type": "注意力类型",
-            "clear_cache": "清除缓存",
-            "prompt": "提示词",
-            "system_prompt": "系统提示词",
-            "max_tokens": "最大令牌数",
-            "temperature": "温度参数",
-            "top_p": "Top P",
-            "repetition_penalty": "重复惩罚",
-            "seed": "随机种子"
-        },
-        "outputs": {
-            "STRING": ["生成文本", "详细响应", "使用统计", "调试信息"]
-        }
-    },
-    "Qwen3VLVideoCaption": {
-        "title": "Qwen3-VL 视频反推",
-        "description": "Qwen3-VL视频描述节点 - 视频关键帧提取和智能描述生成",
-        "inputs": {
-            "video_frames": "视频帧",
-            "caption_mode": "描述模式",
-            "max_tokens": "最大令牌数",
-            "temperature": "温度参数",
-            "seed": "随机种子",
-            "model_name": "模型名称",
-            "device": "设备",
-            "quantization": "量化模式",
-            "attention_type": "注意力类型",
-            "custom_prompt": "自定义提示词",
-            "frame_sampling": "帧采样策略",
-            "sample_rate": "采样帧数",
-            "output_format": "输出格式",
-            "keep_model_loaded": "保持模型加载"
-        },
-        "widgets": {
-            "model_name": "模型名称",
-            "device": "设备",
-            "quantization": "量化模式",
-            "attention_type": "注意力类型",
-            "caption_mode": "描述模式",
-            "frame_sampling": "帧采样策略",
-            "output_format": "输出格式",
-            "keep_model_loaded": "保持模型加载",
-            "video_frames": "视频帧",
-            "max_tokens": "最大令牌数",
-            "temperature": "温度参数",
-            "seed": "随机种子",
-            "custom_prompt": "自定义提示词",
-            "sample_rate": "采样帧数"
-        },
-        "outputs": {
-            "STRING": ["格式化输出", "详细响应"],
-            "DICT": ["处理信息"],
-            "INT": ["种子"]
-        }
-    },
-    "LoadVideoForQwen3VL": {
-        "title": "加载视频 (Qwen3-VL)",
-        "description": "加载视频文件并提取帧序列用于Qwen3-VL处理",
-        "inputs": {
-            "video": "视频文件",
-            "frame_rate": "帧率",
-            "max_frames": "最大帧数"
-        },
-        "widgets": {
-            "video": "视频文件",
-            "frame_rate": "帧率",
-            "max_frames": "最大帧数"
-        },
-        "outputs": {
-            "IMAGE": ["帧序列"],
-            "INT": ["帧数量"]
-        }
+    "outputs": {
+      "图像描述": "图像描述",
+      "详细响应": "详细响应"
     }
+  },
+  "Qwen3VLVideoCaption": {
+    "title": "Qwen3-VL 视频反推",
+    "description": "使用Qwen3-VL模型生成视频描述",
+    "inputs": {
+      "video_frames": "输入视频帧序列",
+      "caption_mode": "描述模式",
+      "custom_prompt": "自定义提示词",
+      "max_tokens": "最大令牌数",
+      "temperature": "温度",
+      "repetition_penalty": "重复惩罚",
+      "frame_sampling": "帧采样策略",
+      "sample_rate": "采样帧数",
+      "output_format": "输出格式",
+      "keep_model_loaded": "保持模型加载",
+      "seed": "随机种子",
+      "model_name": "模型名称",
+      "device": "设备",
+      "attention_type": "注意力类型",
+      "quantization": "量化",
+      "max_memory": "最大内存使用"
+    },
+    "widgets": {
+      "video_frames": "输入视频帧序列",
+      "caption_mode": "描述模式",
+      "custom_prompt": "自定义提示词",
+      "max_tokens": "最大令牌数",
+      "temperature": "温度",
+      "repetition_penalty": "重复惩罚",
+      "frame_sampling": "帧采样策略",
+      "sample_rate": "采样帧数",
+      "output_format": "输出格式",
+      "keep_model_loaded": "保持模型加载",
+      "seed": "随机种子",
+      "model_name": "模型名称",
+      "device": "设备",
+      "attention_type": "注意力类型",
+      "quantization": "量化",
+      "max_memory": "最大内存使用"
+    },
+    "outputs": {
+      "STRING": "视频描述"
+    }
+  },
+  "Qwen3VLQA": {
+    "title": "Qwen3-VL视觉问答",
+    "description": "使用Qwen3-VL模型进行视觉问答",
+    "inputs": {
+      "image": "输入图像",
+      "question": "问题",
+      "chat_history": "对话历史记录",
+      "max_tokens": "最大生成令牌数",
+      "temperature": "生成温度",
+      "repetition_penalty": "重复惩罚",
+      "system_prompt": "系统提示词",
+      "model_name": "模型名称",
+      "device": "设备",
+      "quantization": "量化",
+      "attention_type": "注意力类型",
+      "seed": "随机种子",
+      "clear_model_cache": "清除模型缓存",
+      "max_memory": "最大内存使用"
+    },
+    "widgets": {
+      "question": "问题",
+      "chat_history": "对话历史记录",
+      "max_tokens": "最大生成令牌数",
+      "temperature": "生成温度",
+      "repetition_penalty": "重复惩罚",
+      "system_prompt": "系统提示词",
+      "model_name": "模型名称",
+      "device": "设备",
+      "quantization": "量化",
+      "attention_type": "注意力类型",
+      "clear_model_cache": "清除模型缓存",
+      "seed": "随机种子",
+      "max_memory": "最大内存使用"
+    },
+    "outputs": {
+      "答案": "答案",
+      "更新历史": "更新历史"
+    }
+  },
+  "Qwen3VLTextGenerator": {
+    "title": "Qwen3-VL文本生成器",
+    "description": "使用Qwen3-VL模型生成高质量文本内容",
+    "inputs": {
+      "prompt": "提示词",
+      "system_prompt": "系统提示词",
+      "max_tokens": "最大令牌数",
+      "temperature": "温度",
+      "top_p": "Top P",
+      "repetition_penalty": "重复惩罚",
+      "image": "输入图像",
+      "model_name": "模型名称",
+      "device": "设备",
+      "quantization": "量化",
+      "attention_type": "注意力类型",
+      "seed": "随机种子",
+      "clear_cache": "清除缓存",
+      "max_memory": "最大内存使用"
+    },
+    "widgets": {
+      "prompt": "提示词",
+      "system_prompt": "系统提示词",
+      "max_tokens": "最大令牌数",
+      "temperature": "温度",
+      "top_p": "Top P",
+      "repetition_penalty": "重复惩罚",
+      "model_name": "模型名称",
+      "device": "设备",
+      "quantization": "量化",
+      "attention_type": "注意力类型",
+      "seed": "随机种子",
+      "clear_cache": "清除缓存",
+      "max_memory": "最大内存使用"
+    },
+    "outputs": {
+      "STRING": "生成的文本"
+    }
+  }
 }
