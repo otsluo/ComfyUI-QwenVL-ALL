@@ -329,15 +329,28 @@ class Qwen3VLQA:
             
             # 量化配置
             quantization_config = None
-            if quantization == "4-bit":
-                quantization_config = BitsAndBytesConfig(
-                    load_in_4bit=True,
-                    bnb_4bit_compute_dtype=torch.float16,
-                    bnb_4bit_use_double_quant=True,
-                    bnb_4bit_quant_type="nf4"
-                )
-            elif quantization == "8-bit":
-                quantization_config = BitsAndBytesConfig(load_in_8bit=True)
+            if quantization == "4位":
+                try:
+                    from transformers import BitsAndBytesConfig
+                    quantization_config = BitsAndBytesConfig(
+                        load_in_4bit=True,
+                        bnb_4bit_use_double_quant=True,
+                        bnb_4bit_quant_type="nf4",
+                        bnb_4bit_compute_dtype=torch.float16
+                    )
+                except Exception as e:
+                    print(f"[Qwen3-VL 问答] 4-bit量化配置失败: {str(e)}")
+                    print("[Qwen3-VL 问答] 回退到无量化")
+                    # 如果4-bit量化失败，回退到无量化
+                    quantization = "无（FP16）"
+            elif quantization == "8位":
+                try:
+                    from transformers import BitsAndBytesConfig
+                    quantization_config = BitsAndBytesConfig(load_in_8bit=True)
+                except Exception as e:
+                    print(f"[Qwen3-VL 问答] 8-bit量化配置失败: {str(e)}")
+                    print("[Qwen3-VL 问答] 回退到无量化")
+                    quantization = "无（FP16）"
             
             print(f"[Qwen3-VL QA] 加载模型: {model_name}")
             print(f"[Qwen3-VL QA] 设备: {device_name}")

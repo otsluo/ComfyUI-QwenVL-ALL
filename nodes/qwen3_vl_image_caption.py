@@ -289,11 +289,29 @@ class Qwen3VLImageCaption:
             # 配置量化
             quantization_config = None
             if quantization == "4-bit":
-                quantization_config = BitsAndBytesConfig(load_in_4bit=True)
-                model_kwargs["quantization_config"] = quantization_config
+                try:
+                    from transformers import BitsAndBytesConfig
+                    quantization_config = BitsAndBytesConfig(
+                        load_in_4bit=True,
+                        bnb_4bit_use_double_quant=True,
+                        bnb_4bit_quant_type="nf4",
+                        bnb_4bit_compute_dtype=torch.float16
+                    )
+                    model_kwargs["quantization_config"] = quantization_config
+                except Exception as e:
+                    print(f"[Qwen3-VL Image Caption] 4-bit量化配置失败: {str(e)}")
+                    print("[Qwen3-VL Image Caption] 尝试使用8-bit量化或无量化")
+                    # 如果4-bit量化失败，回退到无量化
+                    quantization = "无（FP16）"
             elif quantization == "8-bit":
-                quantization_config = BitsAndBytesConfig(load_in_8bit=True)
-                model_kwargs["quantization_config"] = quantization_config
+                try:
+                    from transformers import BitsAndBytesConfig
+                    quantization_config = BitsAndBytesConfig(load_in_8bit=True)
+                    model_kwargs["quantization_config"] = quantization_config
+                except Exception as e:
+                    print(f"[Qwen3-VL Image Caption] 8-bit量化配置失败: {str(e)}")
+                    print("[Qwen3-VL Image Caption] 回退到无量化")
+                    quantization = "无（FP16）"
             
             # 配置注意力类型
             attention_type_map = {

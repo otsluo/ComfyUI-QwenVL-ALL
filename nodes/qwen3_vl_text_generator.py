@@ -284,11 +284,30 @@ class Qwen3VLTextGenerator:
         }
         
         # 量化配置
-        QUANTIZATION_CONFIGS = {
-            "4位": {"load_in_4bit": True, "bnb_4bit_compute_dtype": torch.float16},
-            "8位": {"load_in_8bit": True},
-            "无（FP16）": {}
-        }
+        # 量化配置
+        quantization_config = None
+        if quantization == "4位":
+            try:
+                from transformers import BitsAndBytesConfig
+                quantization_config = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_compute_dtype=torch.float16
+                )
+            except Exception as e:
+                print(f"[Qwen3-VL 文本生成] 4-bit量化配置失败: {str(e)}")
+                print("[Qwen3-VL 文本生成] 回退到无量化")
+                # 如果4-bit量化失败，回退到无量化
+                quantization = "无（FP16）"
+        elif quantization == "8位":
+            try:
+                from transformers import BitsAndBytesConfig
+                quantization_config = BitsAndBytesConfig(load_in_8bit=True)
+            except Exception as e:
+                print(f"[Qwen3-VL 文本生成] 8-bit量化配置失败: {str(e)}")
+                print("[Qwen3-VL 文本生成] 回退到无量化")
+                quantization = "无（FP16）"
         
         # 注意力实现配置
         ATTN_IMPLEMENTATIONS = {
@@ -357,8 +376,8 @@ class Qwen3VLTextGenerator:
                     load_kwargs["max_memory"] = max_memory_config
                 
                 # 如需要则添加量化配置
-                if quantization in QUANTIZATION_CONFIGS:
-                    load_kwargs.update(QUANTIZATION_CONFIGS[quantization])
+                if quantization_config is not None:
+                    load_kwargs["quantization_config"] = quantization_config
                 
                 print(f"[Qwen3-VL 文本生成] 🚀 加载模型...")
                 self.processor = AutoProcessor.from_pretrained(model_checkpoint, trust_remote_code=True)
